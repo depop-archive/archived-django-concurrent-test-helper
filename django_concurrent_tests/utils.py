@@ -1,7 +1,10 @@
+from __future__ import print_function
 import os
 import pickle
 import subprocess
+import sys
 import threading
+from contextlib import contextmanager
 
 from django.conf import settings
 from django.core.management import call_command
@@ -39,6 +42,7 @@ class ProcessManager(object):
             self.terminated = True
             thread.join()
 
+        print(self.stderr)
         return self.stdout
 
 
@@ -66,7 +70,7 @@ def test_call(f, **kwargs):
             name=f.__name__,
         )
 
-        print 'Calling {f} in subprocess'.format(f=function_path)
+        print('Calling {f} in subprocess'.format(f=function_path))
 
         if not os.environ.get('CONCURRENT_TESTS_NO_SUBPROCESS'):
             cmd = [
@@ -92,3 +96,11 @@ def test_call(f, **kwargs):
         else:
             return e
     return b64pickle.loads(result) if result else None
+
+
+@contextmanager
+def redirect_stdout(to):
+    original = sys.stdout
+    sys.stdout = to
+    yield
+    sys.stdout = original

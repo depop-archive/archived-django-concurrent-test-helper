@@ -3,25 +3,21 @@ from __future__ import print_function
 import json
 import sys
 import warnings
-from contextlib import contextmanager
 from functools import partial
 from importlib import import_module
 from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connections, DEFAULT_DB_ALIAS
-from django.test.simple import dependency_ordered
 from django.test.utils import setup_test_environment
+try:
+    from django.test.simple import dependency_ordered
+except ImportError:
+    # Django > 1.5
+    from django.test.runner import dependency_ordered
 
 from ... import b64pickle
-
-
-@contextmanager
-def redirect_stdout(to):
-    original = sys.stdout
-    sys.stdout = to
-    yield
-    sys.stdout = original
+from ...utils import redirect_stdout
 
 
 def use_test_databases():
@@ -36,11 +32,11 @@ def use_test_databases():
     dependencies = {}
     for alias in connections:
         connection = connections[alias]
-        if connection.settings_dict['TEST_MIRROR']:
+        test_mirror = connection.settings_dict.get('TEST_MIRROR')
+        if test_mirror:
             # If the database is marked as a test mirror, save
             # the alias.
-            mirrored_aliases[alias] = (
-                connection.settings_dict['TEST_MIRROR'])
+            mirrored_aliases[alias] = test_mirror
         else:
             # Store a tuple with DB parameters that uniquely identify it.
             # If we have two aliases with the same values for that tuple,
@@ -67,13 +63,18 @@ def use_test_databases():
         for alias in aliases:
             connection = connections[alias]
             test_db_name = connection.creation._get_test_db_name()
+            # NOTE: if using sqlite for tests, be sure to specify a
+            # TEST_NAME / TEST:NAME with a real filename to avoid using
+            # in-memory db
             if test_db_name == ':memory:':
                 # Django converts all sqlite test dbs to :memory: ...but
                 # they can't be shared between concurrent processes...
                 # in this case it also means our parent test run used an
                 # in-memory db that we can't share
                 warnings.warn(
-                    "In-memory databases can't be shared between concurrent test processes."
+                    "In-memory databases can't be shared between concurrent "
+                    "test processes. "
+                    "{parent} -> {test}".format(parent=db_name, test=test_db_name)
                 )
             # we are running late in Django life-cycle so it has already
             # opened connections to default db, need to close and re-open
@@ -104,7 +105,7 @@ class Command(BaseCommand):
     way. However, multiprocessing under Python 2 on Unix always uses os.fork
     ...and the forked processes inherit sockets, such as postgres db, but in a
     broken state. I didn't find a way to successfully fork a Django process
-    and no-one on SO did etiher.
+    and no-one on SO did either.
 
     So the idea is for the parent test case to set up concurrent calls to this
     command via subprocess (e.g. via multiprocessing.Pool)

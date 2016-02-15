@@ -18,7 +18,7 @@ class Tox(TestCommand):
 
 setup(
     name='django-concurrent-test-helper',
-    version='0.1.9',
+    version='0.1.10',
     description="Helpers for executing Django app code concurrently within Django tests",
     long_description=open('README.rst').read(),
     author="Anentropic",
@@ -33,6 +33,9 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
+    ],
+    install_requires=[
+        'six',
     ],
     tests_require=[
         'tox>=1.8',

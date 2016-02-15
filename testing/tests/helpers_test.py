@@ -11,13 +11,14 @@ from testapp.models import Semaphore
 
 
 def update_count_naive(id_):
-    from django.db import connection
-    print connection.settings_dict
-    obj = Semaphore.objects.get(pk=id_, locked=False)
+    try:
+        obj = Semaphore.objects.get(pk=id_, locked=False)
+    except Semaphore.DoesNotExist:
+        return False
+
+    sleep(0.1)  # make a nice race condition
     obj.locked = True
     obj.save()
-
-    sleep(0.1)
 
     obj.count += 1
     obj.locked = False
@@ -38,7 +39,7 @@ def test_naive():
     concurrency = 5
     results = call_concurrently(concurrency, update_count_naive, id_=obj.pk)
     pprint([str(r) for r in results])
-    successes = filter(lambda r: r is True, results)
+    successes = list(filter(lambda r: r is True, results))
 
     obj = Semaphore.objects.get(pk=obj.pk)
 
@@ -56,7 +57,7 @@ def test_transactional():
     concurrency = 5
     results = call_concurrently(concurrency, update_count_transactional, id_=obj.pk)
     pprint([str(r) for r in results])
-    successes = filter(lambda r: r is True, results)
+    successes = list(filter(lambda r: r is True, results))
 
     obj = Semaphore.objects.get(pk=obj.pk)
 
