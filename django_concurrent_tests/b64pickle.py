@@ -22,4 +22,7 @@ def dumps(obj):
 
 
 def loads(val):
+    if six.PY3 and not isinstance(val, six.binary_type):
+        # Python 3.2 requires a bytestring, later Py3s don't care
+        val = bytes(val, encoding='ascii')
     return pickle.loads(b64decode(val))
