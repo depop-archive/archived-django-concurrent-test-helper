@@ -78,6 +78,9 @@ and:
 Notes
 -----
 
+Why subprocesses?
+~~~~~~~~~~~~~~~~~
+
 We originally wanted to implement this purely using ``multiprocessing.Pool`` to call the function you want to test. If that had worked then this module would hardly be necessary.
 
 Unfortunately we hit a problem with this approach: multiprocessing works by forking the parent process. The forked processes inherit the parent's sockets, so in a Django project this will include things like the socket opened by psycopg2 to your Postgres database. However the inherited sockets are in a broken state. There's a bunch of questions about this on SO and no solutions presented, it seems basically you can't fork a Django process and do anything with the db afterwards.
@@ -88,8 +91,12 @@ Unfortunately we hit a problem with this approach: multiprocessing works by fork
 
 So in order to make this work we have to use ``subprocess.Popen`` to run with un-forked 'virgin' processes. To be able to test an arbitrary function in this way we do an ugly/clever hack and provide a ``manage.py concurrent_call_wrapper`` command (which is why you have to add this module to your ``INSTALLED_APPS``) which handles the serialization of kwargs and return values.
 
-This does mean that your kwargs and return value *must be pickleable*.
+    This does mean that your kwargs and return value *must be pickleable*.
 
 Another potential gotcha is if you are using SQLite db when running your tests. By default Django will use ``:memory:`` for the test-db in this case. But that means the concurrent processes would each have their own in-memory db and wouldn't be able to see data created by the parent test run.
 
-So for these tests to work you need to be sure to set ``TEST_NAME`` for the SQLite db to a *real filename* in your ``DATABASES`` settings (in Django 1.9 this is a dict, i.e. ``{'TEST': {'NAME': 'test.db'}}``).
+    For these tests to work you need to be sure to set ``TEST_NAME`` for the SQLite db to a *real filename* in your ``DATABASES`` settings (in Django 1.9 this is a dict, i.e. ``{'TEST': {'NAME': 'test.db'}}``).
+
+Finally you need to be careful with Django's implicit transactions, otherwise data you create in the parent test has not yet been committed and is therefore not visible to the subprocesses.
+
+    Ensure that you use Django's ``TransactionTestCase`` or a derivative (to prevent all the code in your test from being inside an uncommitted transaction).
