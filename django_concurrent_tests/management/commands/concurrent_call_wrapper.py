@@ -95,6 +95,12 @@ def use_test_databases():
         connection.cursor()
 
 
+def close_db_connections():
+    for alias in connections:
+        connection = connections[alias]
+        connection.close()
+
+
 class Command(BaseCommand):
     """
     The goal of this command is to allow us to do actual concurrent requests
@@ -165,5 +171,6 @@ class Command(BaseCommand):
             if not kwargs['no_test_db']:
                 use_test_databases()
             result = f(**f_kwargs)
+            close_db_connections()
 
         print(serialize(result), end='')
