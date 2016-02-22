@@ -18,7 +18,7 @@ class Tox(TestCommand):
 
 setup(
     name='django-concurrent-test-helper',
-    version='0.2.1',
+    version='0.2.3',
     description="Helpers for executing Django app code concurrently within Django tests",
     long_description=open('README.rst').read(),
     author="Anentropic",
@@ -29,11 +29,11 @@ setup(
         'django_concurrent_tests.management',
         'django_concurrent_tests.management.commands',
     ],
-    license='MIT',
+    license='Apache 2.0',
     classifiers=[
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Framework :: Django',
