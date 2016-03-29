@@ -24,7 +24,6 @@ def use_test_databases():
     """
     Adapted from DjangoTestSuiteRunner.setup_databases
     """
-
     # First pass -- work out which databases connections need to be switched
     # and which ones are test mirrors or duplicate entries in DATABASES
     mirrored_aliases = {}
@@ -170,7 +169,10 @@ class Command(BaseCommand):
             # ensure we're using test dbs, shared with parent test run
             if not kwargs['no_test_db']:
                 use_test_databases()
-            result = f(**f_kwargs)
+            try:
+                result = f(**f_kwargs)
+            except Exception as e:
+                result = e
             close_db_connections()
 
         print(serialize(result), end='')
