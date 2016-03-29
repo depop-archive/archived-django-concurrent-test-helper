@@ -138,7 +138,7 @@ class Command(BaseCommand):
             action='store_true',
         ),
         # (dev use only) if running this command directly, option to use the
-        # default dbs created via syndb instead of dbs from parent test run
+        # default dbs created via syncdb instead of dbs from parent test run
     )
 
     help = "We use nosetests path format - path.to.module:function_name"
@@ -172,6 +172,8 @@ class Command(BaseCommand):
             try:
                 result = f(**f_kwargs)
             except Exception as e:
+                import traceback
+                traceback.print_exc(file=sys.stderr)
                 result = e
             close_db_connections()
 

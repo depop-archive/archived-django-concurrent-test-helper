@@ -84,4 +84,4 @@ def test_exception():
 
     for result in results:
         assert isinstance(result, CustomError)
-        assert result.message == 'WTF'
+        assert result.args == ('WTF',)
