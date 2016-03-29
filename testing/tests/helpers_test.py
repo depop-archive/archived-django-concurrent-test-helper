@@ -1,53 +1,35 @@
 from pprint import pprint
-from time import sleep
 
 import pytest
-from django.db.models import F
 
 from django_concurrent_tests.helpers import call_concurrently
 from flaky import flaky
 
 from testapp.models import Semaphore
 
-
-def update_count_naive(id_):
-    try:
-        obj = Semaphore.objects.get(pk=id_, locked=False)
-    except Semaphore.DoesNotExist:
-        return False
-
-    sleep(0.1)  # make a nice race condition
-    obj.locked = True
-    obj.save()
-
-    obj.count += 1
-    obj.locked = False
-    obj.save()
-    return True
+from .funcs_to_test import (
+    update_count_naive,
+    update_count_transactional,
+    raise_exception,
+    wallpaper,
+    CustomError,
+)
 
 
-def update_count_transactional(id_):
-    Semaphore.objects.filter(pk=id_, locked=False).update(count=F('count') + 1)
-    return True
-
-
-class CustomError(Exception):
-    pass
-
-
-def raise_exception():
-    raise CustomError('WTF')
+def is_success(result):
+    return result is True and not isinstance(result, Exception)
 
 
 @flaky(max_runs=3, min_passes=1)
 @pytest.mark.django_db(transaction=True)
 def test_naive():
+    # call_concurrently should reveal the race condition here
     obj = Semaphore.objects.create()
 
     concurrency = 5
     results = call_concurrently(concurrency, update_count_naive, id_=obj.pk)
     pprint([str(r) for r in results])
-    successes = list(filter(lambda r: r is True, results))
+    successes = list(filter(is_success, results))
 
     obj = Semaphore.objects.get(pk=obj.pk)
 
@@ -60,12 +42,13 @@ def test_naive():
 @flaky(max_runs=3, min_passes=3)
 @pytest.mark.django_db(transaction=True)
 def test_transactional():
+    # there should be no race condition here
     obj = Semaphore.objects.create()
 
     concurrency = 5
     results = call_concurrently(concurrency, update_count_transactional, id_=obj.pk)
     pprint([str(r) for r in results])
-    successes = list(filter(lambda r: r is True, results))
+    successes = list(filter(is_success, results))
 
     obj = Semaphore.objects.get(pk=obj.pk)
 
@@ -75,8 +58,6 @@ def test_transactional():
     assert len(successes) == obj.count
 
 
-@flaky(max_runs=3, min_passes=3)
-@pytest.mark.django_db(transaction=True)
 def test_exception():
     concurrency = 5
     results = call_concurrently(concurrency, raise_exception)
@@ -85,3 +66,21 @@ def test_exception():
     for result in results:
         assert isinstance(result, CustomError)
         assert result.args == ('WTF',)
+
+
+def test_badly_decorated_fail():
+    concurrency = 1
+    results = call_concurrently(concurrency, wallpaper, colour='orange')
+    pprint([str(r) for r in results])
+
+    for result in results:
+        assert isinstance(result, AttributeError)
+
+
+def test_badly_decorated_pass():
+    concurrency = 1
+    results = call_concurrently(concurrency, 'tests.funcs_to_test:wallpaper', colour='orange')
+    pprint([str(r) for r in results])
+
+    for result in results:
+        assert result == 'orange stripes'

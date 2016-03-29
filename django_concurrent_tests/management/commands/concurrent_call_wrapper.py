@@ -144,37 +144,42 @@ class Command(BaseCommand):
     help = "We use nosetests path format - path.to.module:function_name"
 
     def handle(self, *args, **kwargs):
-        if not args:
-            raise CommandError(
-                'Must supply an import path to function to execute')
-
-        module_name, function_name = args[0].split(':')
-        module = import_module(module_name)
-        f = getattr(module, function_name)
-
         serializer_name = kwargs['serializer']
-        if serializer_name == 'b64pickle':
-            serialize = b64pickle.dumps
-            deserialize = b64pickle.loads
-        elif serializer_name == 'json':
+        if serializer_name == 'json':
             serialize = partial(json.dumps, ensure_ascii=True)
             deserialize = json.loads
+        else:
+            # default
+            serialize = b64pickle.dumps
+            deserialize = b64pickle.loads
 
-        f_kwargs = deserialize(kwargs['kwargs'] or '{}')
-
-        # redirect any printing that `f` may do so as not to pollute our
+        # redirect any printing that may occur so as not to pollute our
         # output (which is deserialized as return value by caller)
         with redirect_stdout(sys.stderr):
-            setup_test_environment()
-            # ensure we're using test dbs, shared with parent test run
-            if not kwargs['no_test_db']:
-                use_test_databases()
             try:
-                result = f(**f_kwargs)
+                if not args:
+                    raise CommandError(
+                        'Must supply an import path to function to execute')
+
+                if serializer_name not in ('json', 'b64pickle'):
+                    raise CommandError(
+                        'Invalid --serializer name')
+
+                module_name, function_name = args[0].split(':')
+                module = import_module(module_name)
+                f = getattr(module, function_name)
+
+                f_kwargs = deserialize(kwargs['kwargs'] or '{}')
+
+                setup_test_environment()
+                # ensure we're using test dbs, shared with parent test run
+                if not kwargs['no_test_db']:
+                    use_test_databases()
+                    result = f(**f_kwargs)
+                close_db_connections()
             except Exception as e:
                 import traceback
                 traceback.print_exc(file=sys.stderr)
                 result = e
-            close_db_connections()
 
         print(serialize(result), end='')

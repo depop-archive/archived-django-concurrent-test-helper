@@ -8,6 +8,7 @@ from contextlib import contextmanager
 
 from django.conf import settings
 from django.core.management import call_command
+import six
 
 from . import b64pickle
 
@@ -49,7 +50,9 @@ class ProcessManager(object):
 def test_call(f, **kwargs):
     """
     Args:
-        f (function) - the function to call
+        f (Union[function, str]) - the function to call, or
+            the 'dotted module.path.to:function' as a string (NOTE
+            colon separates the name to import)
         **kwargs - kwargs to pass to `function`
 
     Returns:
@@ -60,15 +63,17 @@ def test_call(f, **kwargs):
         `kwargs` must be pickleable
         <return value> of `function` must be pickleable
     """
-    # wrap everything in a catch-all except because multiprocessing
-    # seems to hang if there's an exception in a child process
+    # wrap everything in a catch-all except to avoid hanging the subprocess
     try:
         serialized_kwargs = b64pickle.dumps(kwargs)
 
-        function_path = '{module}:{name}'.format(
-            module=f.__module__,
-            name=f.__name__,
-        )
+        if isinstance(f, six.string_types):
+            function_path = f
+        else:
+            function_path = '{module}:{name}'.format(
+                module=f.__module__,
+                name=f.__name__,
+            )
 
         print('Calling {f} in subprocess'.format(f=function_path))
 

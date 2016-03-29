@@ -9,7 +9,15 @@ def call_concurrently(concurrency, function, **kwargs):
 
     Args:
         concurrency (int) - how many calls to make in parallel
-        function (function) - the function to call
+        function (Union[function, str]) - the function to call, or
+            the 'dotted module.path.to:function' as a string (NOTE
+            colon separates the name to import)
+            NOTE:
+            when `f` is a decorated function where decorator returns a new
+            object and functools.wraps was not used (and maybe some other
+            cases too) we need to be able to tell our subprocess how to
+            import `f`... in this case using string path is mandatory (as
+            we cannot introspect it)
         **kwargs - kwargs to pass to `function`
 
     Returns:
@@ -30,8 +38,8 @@ def make_concurrent_calls(*calls):
     different functions, or with different kwargs each time.
 
     Args:
-        *calls (Iterable[function, dict]) - list of (func, kwargs) tuples
-            to call concurrently
+        *calls (Iterable[Union[function, str], dict]) - list of
+            (func or func path, kwargs) tuples to call concurrently
 
     Returns:
         List[Any] - return values from each call in `calls`
