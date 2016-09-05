@@ -175,7 +175,7 @@ class Command(BaseCommand):
                 # ensure we're using test dbs, shared with parent test run
                 if not kwargs['no_test_db']:
                     use_test_databases()
-                    result = f(**f_kwargs)
+                result = f(**f_kwargs)
                 close_db_connections()
             except Exception as e:
                 import traceback
