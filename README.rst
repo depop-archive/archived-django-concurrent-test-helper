@@ -96,7 +96,31 @@ Note that if your called function raises an exception, the exception object will
         errors = list(filter(lambda r: isinstance(r, Exception), results))
         assert len(errors) == 3
 
-Lastly, you can pass a string import path to a function rather than the function itself. The format is: `'dotted module.path.to:function'` (NOTE colon separates the name to import, after the dotted module path).
+Another thing to remember is if you are using the ``override_settings`` decorator in your test. You need to also decorate your called functions (since the subprocesses won't see the overridden settings from your main test process):
+
+.. code:: python
+
+    from django_concurrent_tests.helpers import make_concurrent_calls
+
+    @override_settings(SPECIAL_SETTING=False)
+    def test_concurrent_code():
+        calls = [
+            (first_func, {'first_arg': 1}),
+            (raises_error, {'other_arg': 'wtf'}),
+        ] * 3
+        results = make_concurrent_calls(*calls)
+        
+    @override_settings(SPECIAL_SETTING=False)
+    def first_func(first_arg):
+        return first_arg * 2
+    
+    def raises_error(other_arg):
+        # can also be used as a context manager
+        with override_settings(SPECIAL_SETTING=False):
+            raise SomeError(other_arg)
+
+
+Lastly, you can pass a string import path to a function rather than the function itself. The format is: ``'dotted module.path.to:function'`` (NOTE colon separates the name to import, after the dotted module path).
 
 This can be nice when you don't want to import the function itself in your test to pass it. But more importantly it is *essential* in some cases, such as when ``f`` is a decorated function whose decorator returns a new object (and ``functools.wraps`` was not used). In that situation we will not be able to introspect the import path from the function object's ``__module__`` (which will point to the decorator's module instead), so for those cases calling by string is *mandatory*.
 
@@ -115,7 +139,9 @@ This can be nice when you don't want to import the function itself in your test 
         assert len(results) == 3
 
 
-Notes
+
+
+NOTES
 -----
 
 Why subprocesses?
