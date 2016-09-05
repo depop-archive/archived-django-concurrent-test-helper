@@ -115,8 +115,8 @@ class Command(BaseCommand):
     So the idea is for the parent test case to set up concurrent calls to this
     command via subprocess (e.g. via multiprocessing.Pool)
 
-    You don't need to use this command directly, see `dp_utils.concurrent_tests`
-    for helper functions.
+    You don't need to use this command directly, see `django_concurrent_tests.helpers`
+    for helper functions that you'd use in your unit tests.
     """
 
     option_list = BaseCommand.option_list + (
