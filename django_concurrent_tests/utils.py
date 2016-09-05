@@ -13,7 +13,14 @@ import six
 from . import b64pickle
 
 
+SUBPROCESS_TIMEOUT = int(os.environ.get('DJANGO_CONCURRENT_TESTS_TIMEOUT', '30'))
+
+
 class UnpickleableError(Exception):
+    pass
+
+
+class TerminatedProcessError(Exception):
     pass
 
 
@@ -39,6 +46,7 @@ class ProcessManager(object):
 
         thread.join(timeout)
         if thread.is_alive():
+            # we reached the timeout deadline with process still running
             self.process.terminate()
             self.terminated = True
             thread.join()
@@ -85,7 +93,9 @@ def test_call(f, **kwargs):
                 '--kwargs=%s' % serialized_kwargs,
             ]
             manager = ProcessManager(cmd)
-            result = manager.run(timeout=30)
+            result = manager.run(timeout=SUBPROCESS_TIMEOUT)
+            if manager.terminated:
+                raise TerminatedProcessError(result)
         else:
             # TODO: collect stdout
             result = call_command(

@@ -3,6 +3,7 @@ from pprint import pprint
 import pytest
 
 from django_concurrent_tests.helpers import call_concurrently
+from django_concurrent_tests.utils import SUBPROCESS_TIMEOUT, TerminatedProcessError
 from flaky import flaky
 
 from testapp.models import Semaphore
@@ -13,6 +14,7 @@ from .funcs_to_test import (
     raise_exception,
     wallpaper,
     CustomError,
+    timeout,
 )
 
 
@@ -84,3 +86,11 @@ def test_badly_decorated_pass():
 
     for result in results:
         assert result == 'orange stripes'
+
+
+def test_timeout():
+    results = call_concurrently(1, timeout, sleep_for=SUBPROCESS_TIMEOUT + 5)
+    pprint([str(r) for r in results])
+
+    for result in results:
+        assert isinstance(result, TerminatedProcessError)

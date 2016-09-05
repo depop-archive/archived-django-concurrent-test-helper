@@ -38,3 +38,8 @@ def raise_exception():
 @badly_decorated
 def wallpaper(colour):
     return '%s stripes' % colour
+
+
+def timeout(sleep_for):
+    sleep(sleep_for)
+    return sleep_for
