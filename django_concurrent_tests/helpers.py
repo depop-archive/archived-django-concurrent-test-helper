@@ -1,6 +1,6 @@
 from multiprocessing.pool import ThreadPool as Pool
 
-from .utils import test_call
+from .utils import test_call, SUBPROCESS_TIMEOUT
 
 
 def call_concurrently(concurrency, function, **kwargs):
@@ -53,4 +53,4 @@ def make_concurrent_calls(*calls):
         )
     pool.close()
     pool.join()
-    return [result.get(timeout=30) for result in results]
+    return [result.get(timeout=SUBPROCESS_TIMEOUT + 5) for result in results]
