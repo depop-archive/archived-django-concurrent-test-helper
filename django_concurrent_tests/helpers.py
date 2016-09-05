@@ -53,4 +53,6 @@ def make_concurrent_calls(*calls):
         )
     pool.close()
     pool.join()
-    return [result.get(timeout=SUBPROCESS_TIMEOUT + 5) for result in results]
+    # add a bit of extra timeout to allow process terminate cleanup to run
+    # (because we also have an inner timeout on our ProcessManager thread join)
+    return [result.get(timeout=SUBPROCESS_TIMEOUT + 2) for result in results]
