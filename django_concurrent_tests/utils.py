@@ -1,5 +1,6 @@
 from __future__ import print_function
 import os
+import logging
 import pickle
 import subprocess
 import sys
@@ -11,6 +12,9 @@ from django.core.management import call_command
 import six
 
 from . import b64pickle
+
+
+logger = logging.getLogger(__name__)
 
 
 SUBPROCESS_TIMEOUT = int(os.environ.get('DJANGO_CONCURRENT_TESTS_TIMEOUT', '30'))
@@ -39,6 +43,7 @@ class ProcessManager(object):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
+            logger.debug('[{pid}] {cmd}'.format(pid=self.process.pid, cmd=self.cmd[2]))
             self.stdout, self.stderr = self.process.communicate()
 
         thread = threading.Thread(target=target)
@@ -51,7 +56,7 @@ class ProcessManager(object):
             self.terminated = True
             thread.join()
 
-        print(self.stderr)
+        logger.debug(self.stderr)
         return self.stdout
 
 
@@ -83,8 +88,6 @@ def test_call(f, **kwargs):
                 name=f.__name__,
             )
 
-        print('Calling {f} in subprocess'.format(f=function_path))
-
         if not os.environ.get('CONCURRENT_TESTS_NO_SUBPROCESS'):
             cmd = [
                 getattr(settings, 'MANAGE_PY_PATH', 'manage.py'),
@@ -97,6 +100,7 @@ def test_call(f, **kwargs):
             if manager.terminated:
                 raise TerminatedProcessError(result)
         else:
+            logger.debug('Calling {f} in current process'.format(f=function_path))
             # TODO: collect stdout
             result = call_command(
                 'concurrent_call_wrapper',
