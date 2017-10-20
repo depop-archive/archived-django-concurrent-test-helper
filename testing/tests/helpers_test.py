@@ -1,9 +1,14 @@
+import os
 from pprint import pprint
 
 import pytest
 
 from django_concurrent_tests.helpers import call_concurrently
-from django_concurrent_tests.utils import SUBPROCESS_TIMEOUT, TerminatedProcessError
+from django_concurrent_tests.utils import (
+    SUBPROCESS_TIMEOUT,
+    TerminatedProcessError,
+    override_environment,
+)
 from flaky import flaky
 
 from testapp.models import Semaphore
@@ -15,6 +20,7 @@ from .funcs_to_test import (
     wallpaper,
     CustomError,
     timeout,
+    environment,
 )
 
 
@@ -94,3 +100,15 @@ def test_timeout():
 
     for result in results:
         assert isinstance(result, TerminatedProcessError)
+
+
+def test_environment():
+    assert os.getenv('WTF') is None
+
+    with override_environment(WTF='dude'):
+        results = call_concurrently(1, environment)
+
+    pprint([str(r) for r in results])
+
+    assert os.getenv('WTF') is None
+    assert results[0] == 'dude'

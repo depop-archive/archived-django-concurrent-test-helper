@@ -42,6 +42,7 @@ class ProcessManager(object):
                 self.cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
+                env=os.environ.copy(),
             )
             logger.debug('[{pid}] {cmd}'.format(pid=self.process.pid, cmd=self.cmd[2]))
             self.stdout, self.stderr = self.process.communicate()
@@ -52,7 +53,9 @@ class ProcessManager(object):
         thread.join(timeout)
         if thread.is_alive():
             # we reached the timeout deadline with process still running
+            logger.debug('[{pid}] reached timeout: terminating...'.format(pid=self.process.pid))
             self.process.terminate()
+            logger.debug('[{pid}] reached timeout: terminated.'.format(pid=self.process.pid))
             self.terminated = True
             thread.join()
 
@@ -63,14 +66,15 @@ class ProcessManager(object):
 def test_call(f, **kwargs):
     """
     Args:
-        f (Union[function, str]) - the function to call, or
+        f (Union[function, str]): the function to call, or
             the 'dotted module.path.to:function' as a string (NOTE
             colon separates the name to import)
         **kwargs - kwargs to pass to `function`
 
     Returns:
-        Any - either:
+        Optional[Any]: either
             <return value> OR <exception raised>
+            or None if result was empty
 
     NOTE:
         `kwargs` must be pickleable
@@ -101,7 +105,7 @@ def test_call(f, **kwargs):
                 raise TerminatedProcessError(result)
         else:
             logger.debug('Calling {f} in current process'.format(f=function_path))
-            # TODO: collect stdout
+            # TODO: collect stdout and maybe log it from here
             result = call_command(
                 'concurrent_call_wrapper',
                 function_path,
@@ -123,3 +127,13 @@ def redirect_stdout(to):
     sys.stdout = to
     yield
     sys.stdout = original
+
+
+@contextmanager
+def override_environment(**kwargs):
+    old_env = os.environ
+    new_env = os.environ.copy()
+    new_env.update(kwargs)
+    os.environ = new_env
+    yield
+    os.environ = old_env

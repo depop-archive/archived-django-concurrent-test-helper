@@ -119,6 +119,22 @@ Another thing to remember is if you are using the ``override_settings`` decorato
         with override_settings(SPECIAL_SETTING=False):
             raise SomeError(other_arg)
 
+On the other hand, customised environment vars *will* be inherited by the subprocess and an ``override_environment`` context manager is provided for use in your tests:
+
+.. code:: python
+
+    from django_concurrent_tests.helpers import call_concurrently
+    from django_concurrent_tests.utils import override_environment
+
+    def func_to_test(first_arg):
+        import os
+        return os.getenv('SPECIAL_ENV')
+
+    def test_concurrent_code():
+        with override_environment(SPECIAL_ENV='so special'):
+            results = call_concurrently(1, func_to_test)
+        assert results[0] == 'so special'
+
 
 Lastly, you can pass a string import path to a function rather than the function itself. The format is: ``'dotted module.path.to:function'`` (NOTE colon separates the name to import, after the dotted module path).
 
