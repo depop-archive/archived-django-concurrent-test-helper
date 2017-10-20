@@ -8,8 +8,8 @@ def call_concurrently(concurrency, function, **kwargs):
     Make identical concurrent calls to a function.
 
     Args:
-        concurrency (int) - how many calls to make in parallel
-        function (Union[function, str]) - the function to call, or
+        concurrency (int): how many calls to make in parallel
+        function (Union[function, str]): the function to call, or
             the 'dotted module.path.to:function' as a string (NOTE
             colon separates the name to import)
             NOTE:
@@ -18,10 +18,10 @@ def call_concurrently(concurrency, function, **kwargs):
             cases too) we need to be able to tell our subprocess how to
             import `f`... in this case using string path is mandatory (as
             we cannot introspect it)
-        **kwargs - kwargs to pass to `function`
+        **kwargs: kwargs to pass to `function`
 
     Returns:
-        List[Any] - return values from each run `function`
+        List[Any]: return values from each run `function`
             (results are returned in order that tasks were enqueued)
 
     NOTE:

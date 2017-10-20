@@ -43,3 +43,8 @@ def wallpaper(colour):
 def timeout(sleep_for):
     sleep(sleep_for)
     return sleep_for
+
+
+def environment():
+    import os
+    return os.getenv('WTF')
