@@ -7,11 +7,11 @@ import sys
 import threading
 from contextlib import contextmanager
 
+import six
 from django.conf import settings
 from django.core.management import call_command
-import six
 
-from . import b64pickle
+from . import b64pickle, errors
 
 
 logger = logging.getLogger(__name__)
@@ -20,15 +20,8 @@ logger = logging.getLogger(__name__)
 SUBPROCESS_TIMEOUT = int(os.environ.get('DJANGO_CONCURRENT_TESTS_TIMEOUT', '30'))
 
 
-class UnpickleableError(Exception):
-    pass
-
-
-class TerminatedProcessError(Exception):
-    pass
-
-
 class ProcessManager(object):
+
     def __init__(self, cmd):
         self.cmd = cmd
         self.process = None
@@ -102,7 +95,7 @@ def test_call(f, **kwargs):
             manager = ProcessManager(cmd)
             result = manager.run(timeout=SUBPROCESS_TIMEOUT)
             if manager.terminated:
-                raise TerminatedProcessError(result)
+                raise errors.TerminatedProcessError(result)
         else:
             logger.debug('Calling {f} in current process'.format(f=function_path))
             # TODO: collect stdout and maybe log it from here
@@ -112,12 +105,10 @@ def test_call(f, **kwargs):
                 kwargs=serialized_kwargs,
             )
     except Exception as e:
-        try:
-            pickle.dumps(e)
-        except Exception:
-            return UnpickleableError(repr(e))
-        else:
-            return e
+        # handle any errors which occurred during setup of subprocess
+        return errors.WrappedError(e)
+    # deserialize the result from subprocess run
+    # (any error raised when running the concurrent func will be stored in `result`)
     return b64pickle.loads(result) if result else None
 
 
