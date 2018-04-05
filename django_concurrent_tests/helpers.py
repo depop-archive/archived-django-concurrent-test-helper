@@ -1,5 +1,7 @@
 from multiprocessing.pool import ThreadPool as Pool
 
+import six
+
 from .utils import test_call, SUBPROCESS_TIMEOUT
 
 
@@ -46,13 +48,16 @@ def make_concurrent_calls(*calls):
             (results are returned in same order as supplied)
     """
     pool = Pool(len(calls))
-    results = []
+    futures = []
     for func, kwargs in calls:
-        results.append(
+        futures.append(
             pool.apply_async(test_call, args=(func,), kwds=kwargs)
         )
     pool.close()
     pool.join()
     # add a bit of extra timeout to allow process terminate cleanup to run
     # (because we also have an inner timeout on our ProcessManager thread join)
-    return [result.get(timeout=SUBPROCESS_TIMEOUT + 2) for result in results]
+    return [
+        future.get(timeout=SUBPROCESS_TIMEOUT + 2)
+        for future in futures
+    ]

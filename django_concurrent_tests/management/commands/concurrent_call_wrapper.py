@@ -16,7 +16,7 @@ except ImportError:
     # Django > 1.5
     from django.test.runner import dependency_ordered
 
-from ... import b64pickle
+from ... import b64pickle, errors
 from ...utils import redirect_stdout
 
 
@@ -153,8 +153,9 @@ class Command(BaseCommand):
             serialize = b64pickle.dumps
             deserialize = b64pickle.loads
 
-        # redirect any printing that may occur so as not to pollute our
-        # output (which is deserialized as return value by caller)
+        # redirect any printing that may occur from stdout->stderr
+        # so as not to pollute our stdout output
+        # (which is deserialized as return value by caller)
         with redirect_stdout(sys.stderr):
             try:
                 if not args:
@@ -175,11 +176,11 @@ class Command(BaseCommand):
                 # ensure we're using test dbs, shared with parent test run
                 if not kwargs['no_test_db']:
                     use_test_databases()
+
                 result = f(**f_kwargs)
+
                 close_db_connections()
             except Exception as e:
-                import traceback
-                traceback.print_exc(file=sys.stderr)
-                result = e
+                result = errors.WrappedError(e)
 
         print(serialize(result), end='')

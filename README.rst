@@ -80,10 +80,11 @@ and:
         successes = list(filter(is_success, results))
         assert len(successes) == 1
 
-Note that if your called function raises an exception, the exception object will be returned by the concurrent test helper.
+Note that if your called function raises an exception, the exception will be wrapped in a ``WrappedError`` exception. This provides a way to access the original traceback, or even re-raise the original exception.
 
 .. code:: python
 
+    from django_concurrent_tests.errors import WrappedError
     from django_concurrent_tests.helpers import make_concurrent_calls
 
     def test_concurrent_code():
@@ -95,6 +96,17 @@ Note that if your called function raises an exception, the exception object will
         # results contains the return value from each call
         errors = list(filter(lambda r: isinstance(r, Exception), results))
         assert len(errors) == 3
+
+        assert isinstance(errors[0], WrappedError)
+        assert isinstance(errors[0].error, ValueError)  # the original error
+
+        import traceback
+        traceback.print_tb(errors[0].traceback)
+        
+        try:
+            errors[0].reraise()
+        except ValueError as e:
+            # `e` will be the original error with original traceback
 
 Another thing to remember is if you are using the ``override_settings`` decorator in your test. You need to also decorate your called functions (since the subprocesses won't see the overridden settings from your main test process):
 

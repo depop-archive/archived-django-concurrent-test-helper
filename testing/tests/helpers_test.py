@@ -1,15 +1,19 @@
 import os
+import types
 from pprint import pprint
 
 import pytest
+from flaky import flaky
 
+from django_concurrent_tests.errors import (
+    TerminatedProcessError,
+    WrappedError,
+)
 from django_concurrent_tests.helpers import call_concurrently
 from django_concurrent_tests.utils import (
-    SUBPROCESS_TIMEOUT,
-    TerminatedProcessError,
     override_environment,
+    SUBPROCESS_TIMEOUT,
 )
-from flaky import flaky
 
 from testapp.models import Semaphore
 
@@ -67,13 +71,19 @@ def test_transactional():
 
 
 def test_exception():
+    """
+    Exceptions raised by the func being called concurrently are wrapped with
+    WrappedError, providing access to the original error and traceback.
+    """
     concurrency = 5
     results = call_concurrently(concurrency, raise_exception)
     pprint([str(r) for r in results])
 
     for result in results:
-        assert isinstance(result, CustomError)
-        assert result.args == ('WTF',)
+        assert isinstance(result, WrappedError)
+        assert isinstance(result.traceback, types.TracebackType)
+        assert isinstance(result.error, CustomError)
+        assert result.error.args == ('WTF',)
 
 
 def test_badly_decorated_fail():
@@ -82,7 +92,8 @@ def test_badly_decorated_fail():
     pprint([str(r) for r in results])
 
     for result in results:
-        assert isinstance(result, AttributeError)
+        assert isinstance(result, WrappedError)
+        assert isinstance(result.error, AttributeError)
 
 
 def test_badly_decorated_pass():
@@ -99,7 +110,8 @@ def test_timeout():
     pprint([str(r) for r in results])
 
     for result in results:
-        assert isinstance(result, TerminatedProcessError)
+        assert isinstance(result, WrappedError)
+        assert isinstance(result.error, TerminatedProcessError)
 
 
 def test_environment():
