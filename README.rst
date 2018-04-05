@@ -13,18 +13,22 @@ django-concurrent-test-helper
 
 Helpers for executing Django app code concurrently within Django tests.
 
-Tested against the same versions of Python that Django supports:
+Tested against the same versions of Python that `Django supports<https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django>`_:
 
-=========== ======= ======= ======= ======= ======= =======
-     x       Py2.6   Py2.7   Py3.2   Py3.3   Py3.4   Py3.5 
-=========== ======= ======= ======= ======= ======= =======
-Django 1.4   *       *                                     
-Django 1.5   *       *       *       *                     
-Django 1.6   *       *       *       *                     
-Django 1.7           *       *       *       *             
-Django 1.8           *       *       *       *       *     
-Django 1.9           *                       *       *     
-=========== ======= ======= ======= ======= ======= =======
+============ ======= ======= ======= =======
+     x        Py2.7   Py3.4   Py3.5   Py3.6
+============ ======= ======= ======= =======
+Django 1.4    *                     
+Django 1.5    *                     
+Django 1.6    *                     
+Django 1.7    *       *             
+Django 1.8    *       *       *     
+Django 1.9    *       *       *     
+Django 1.10   *       *       *     
+Django 1.11   *       *       *       *
+============ ======= ======= ======= =======
+
+(with the exception of Python 3.2 and 3.3... these are no longer supported)
 
 
 Getting started

@@ -1,7 +1,21 @@
 #!/usr/bin/env python
 import sys
+from codecs import open  # To use a consistent encoding
+from os import path
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
+
+
+here = path.abspath(path.dirname(__file__))
+
+# Get the long description from the README file
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
+    long_description = f.read()
+
+# Get content from __about__.py
+about = {}
+with open(path.join(here, 'django_concurrent_tests', '__about__.py'), 'r', 'utf-8') as f:
+    exec(f.read(), about)
 
 
 class Tox(TestCommand):
@@ -18,9 +32,9 @@ class Tox(TestCommand):
 
 setup(
     name='django-concurrent-test-helper',
-    version='0.3.0',
+    version=about['__version__'],
     description="Helpers for executing Django app code concurrently within Django tests",
-    long_description=open('README.rst').read(),
+    long_description=long_description,
     author="Anentropic",
     author_email="ego@anentropic.com",
     url="https://github.com/depop/django-concurrent-test-helper",

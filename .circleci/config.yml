@@ -1,0 +1,91 @@
+version: 2.0
+
+jobs:
+  "python-2.7":
+    docker:
+      - image: circleci/python:2.7
+    steps:
+      - checkout
+      - run:
+          command: sudo pip install tox
+      - restore_cache:
+          key: tox-{{ checksum "tox.ini" }}
+      - run:
+          command: |
+            tox -e $(./toxmatch py27) -- --junitxml=/tmp/results/pytest-{envname}.xml
+      - save_cache:
+          key: tox-{{ checksum "tox.ini" }}
+          paths:
+            - ".tox"
+      - store_artifacts:
+          path: /tmp/results
+          destination: python-2.7
+
+  "python-3.4":
+    docker:
+      - image: circleci/python:3.4
+    steps:
+      - checkout
+      - run:
+          command: sudo pip install tox
+      - restore_cache:
+          key: tox-{{ checksum "tox.ini" }}
+      - run:
+          command: |
+            tox -e $(./toxmatch py34) -- --junitxml=/tmp/results/pytest-{envname}.xml
+      - save_cache:
+          key: tox-{{ checksum "tox.ini" }}
+          paths:
+            - ".tox"
+      - store_artifacts:
+          path: /tmp/results
+          destination: python-3.4
+
+  "python-3.5":
+    docker:
+      - image: circleci/python:3.5
+    steps:
+      - checkout
+      - run:
+          command: sudo pip install tox
+      - restore_cache:
+          key: tox-{{ checksum "tox.ini" }}
+      - run:
+          command: |
+            tox -e $(./toxmatch py35) -- --junitxml=/tmp/results/pytest-{envname}.xml
+      - save_cache:
+          key: tox-{{ checksum "tox.ini" }}
+          paths:
+            - ".tox"
+      - store_artifacts:
+          path: /tmp/results
+          destination: python-3.5
+
+  "python-3.6":
+    docker:
+      - image: circleci/python:3.6
+    steps:
+      - checkout
+      - run:
+          command: sudo pip install tox
+      - restore_cache:
+          key: tox-{{ checksum "tox.ini" }}
+      - run:
+          command: |
+            tox -e $(./toxmatch py36) -- --junitxml=/tmp/results/pytest-{envname}.xml
+      - save_cache:
+          key: tox-{{ checksum "tox.ini" }}
+          paths:
+            - ".tox"
+      - store_artifacts:
+          path: /tmp/results
+          destination: python-3.6
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - "python-2.7"
+      - "python-3.4"
+      - "python-3.5"
+      - "python-3.6"
