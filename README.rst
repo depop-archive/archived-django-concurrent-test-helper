@@ -4,12 +4,12 @@ django-concurrent-test-helper
 
 |Build Status| |PyPi Version|
 
-.. |Build Status| image:: https://travis-ci.org/depop/django-concurrent-test-helper.svg?branch=master
-    :alt: Build Status
-    :target: https://travis-ci.org/depop/django-concurrent-test-helper
 .. |PyPi Version| image:: https://badge.fury.io/py/django-concurrent-test-helper.svg
     :alt: Latest PyPI version
     :target: https://pypi.python.org/pypi/django-concurrent-test-helper/
+
+.. |Build Status| image:: https://circleci.com/gh/depop/django-concurrent-test-helper.svg?style=shield&circle-token=3e078cd6ae563b403d75e6aa0635569e902fb71a
+    :alt: Build Status
 
 Helpers for executing Django app code concurrently within Django tests.
 
