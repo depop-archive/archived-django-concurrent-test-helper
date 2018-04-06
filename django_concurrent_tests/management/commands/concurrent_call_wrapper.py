@@ -215,7 +215,6 @@ class Command(BaseCommand):
                 if not kwargs['no_test_db']:
                     use_test_databases()
  
-                print('WTF')
                 result = f(**f_kwargs)
 
                 close_db_connections()
