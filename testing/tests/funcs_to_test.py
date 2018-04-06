@@ -6,6 +6,10 @@ from testapp.decorators import badly_decorated
 from testapp.models import Semaphore
 
 
+def simple():
+    return True
+
+
 def update_count_naive(id_):
     try:
         obj = Semaphore.objects.get(pk=id_, locked=False)

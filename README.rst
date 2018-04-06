@@ -88,6 +88,8 @@ Note that if your called function raises an exception, the exception will be wra
 
 .. code:: python
 
+    import types
+
     from django_concurrent_tests.errors import WrappedError
     from django_concurrent_tests.helpers import make_concurrent_calls
 
@@ -103,14 +105,23 @@ Note that if your called function raises an exception, the exception will be wra
 
         assert isinstance(errors[0], WrappedError)
         assert isinstance(errors[0].error, ValueError)  # the original error
+        assert isinstance(errors[0].traceback, types.TracebackType)
 
-        import traceback
-        traceback.print_tb(errors[0].traceback)
-        
-        try:
-            errors[0].reraise()
-        except ValueError as e:
-            # `e` will be the original error with original traceback
+    # other things you can do with the WrappedError:
+
+    # 1. print the traceback
+    errors[0].print_tb()
+
+    # 2. drop into a debugger (ipdb if installed, else pdb)
+    errors[0].debug()
+    ipdb> 
+    # ...can explore the stack of original exception!
+    
+    # 3. re-raise the original exception
+    try:
+        errors[0].reraise()
+    except ValueError as e:
+        # `e` will be the original error with original traceback
 
 Another thing to remember is if you are using the ``override_settings`` decorator in your test. You need to also decorate your called functions (since the subprocesses won't see the overridden settings from your main test process):
 

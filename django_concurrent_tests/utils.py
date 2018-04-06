@@ -104,12 +104,12 @@ def test_call(f, **kwargs):
                 function_path,
                 kwargs=serialized_kwargs,
             )
+        # deserialize the result from subprocess run
+        # (any error raised when running the concurrent func will be stored in `result`)
+        return b64pickle.loads(result) if result else None
     except Exception as e:
         # handle any errors which occurred during setup of subprocess
         return errors.WrappedError(e)
-    # deserialize the result from subprocess run
-    # (any error raised when running the concurrent func will be stored in `result`)
-    return b64pickle.loads(result) if result else None
 
 
 @contextmanager

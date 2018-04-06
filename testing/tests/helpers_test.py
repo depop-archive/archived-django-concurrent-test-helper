@@ -18,18 +18,25 @@ from django_concurrent_tests.utils import (
 from testapp.models import Semaphore
 
 from .funcs_to_test import (
+    CustomError,
+    environment,
+    raise_exception,
+    simple,
+    timeout,
     update_count_naive,
     update_count_transactional,
-    raise_exception,
     wallpaper,
-    CustomError,
-    timeout,
-    environment,
 )
 
 
 def is_success(result):
     return result is True and not isinstance(result, Exception)
+
+
+def test_simple():
+    concurrency = 2
+    results = call_concurrently(concurrency, simple)
+    assert results == [True, True]
 
 
 @flaky(max_runs=3, min_passes=1)
