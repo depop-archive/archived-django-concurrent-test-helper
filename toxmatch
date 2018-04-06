@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+"""
+https://gist.github.com/eli-collins/ef91add2bc635ccaf61738cd805cb18b
+
+tox -e <env list> does not accept partial or wildcard env names
+
+So this util helps to generate a list of concrete env names.
+
+Usage example:
+
+    $ toxmatch {foo,bar}-py{2,3}
+    foo-py2,foo-py3,bar-py2,bar-py3
+
+    $ toxmatch py2
+    foo-py2,bar-py2,baz-py2
+
+    $ toxmatch foo
+    foo-py2,foo-py3
+"""
+from __future__ import print_function
+import sys
+
+from tox.config import parseconfig, _expand_envstr
+
+
+def main(pattern):
+    reqs = set(frozenset(elem.split("-")) for elem in _expand_envstr(pattern))
+
+    def match(env):
+        factors = set(env.split("-"))
+        return any(factors.issuperset(req) for req in reqs)
+
+    print(
+        ",".join(
+            env
+            for env in parseconfig([]).envlist
+            if match(env)
+        )
+    )
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1]))

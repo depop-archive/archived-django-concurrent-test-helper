@@ -11,10 +11,15 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import connections, DEFAULT_DB_ALIAS
 from django.test.utils import setup_test_environment
 try:
+    # Django 1.4
     from django.test.simple import dependency_ordered
 except ImportError:
-    # Django > 1.5
-    from django.test.runner import dependency_ordered
+    try:
+        # Django 1.5 - 1.10
+        from django.test.runner import dependency_ordered
+    except ImportError:
+        # Django 1.11+
+        from django.test.utils import dependency_ordered
 
 from ... import b64pickle, errors
 from ...utils import redirect_stdout
@@ -119,29 +124,55 @@ class Command(BaseCommand):
     for helper functions that you'd use in your unit tests.
     """
 
-    option_list = BaseCommand.option_list + (
-        make_option(
-            '-k', '--kwargs',
+    if hasattr(BaseCommand, 'option_list'):
+        # Django < 1.10
+        option_list = BaseCommand.option_list + (
+            make_option(
+                '-k', '--kwargs',
+                help='kwargs to request client method call (serialized to ascii)',
+            ),
+            make_option(
+                '-s', '--serializer',
+                help='Serialization format',
+                type='choice', choices=('b64pickle', 'json'),
+                default='b64pickle',
+                # json is included to have a hand-editable option, which may be
+                # useful if running this command directly (dev use only)
+            ),
+            make_option(
+                '-t', '--no-test-db',
+                help="Don't patch connection to use test db",
+                action='store_true',
+            ),
+            # (dev use only) if running this command directly, option to use the
+            # default dbs created via syncdb instead of dbs from parent test run
+        )
+
+    help = "We use nosetests path format - path.to.module:function_name"
+
+    def add_arguments(self, parser):
+        # Django >= 1.10
+        parser.add_argument(
+            '--kwargs', '-k',
             help='kwargs to request client method call (serialized to ascii)',
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '-s', '--serializer',
             help='Serialization format',
-            type='choice', choices=('b64pickle', 'json'),
+            choices=('b64pickle', 'json'),
             default='b64pickle',
             # json is included to have a hand-editable option, which may be
             # useful if running this command directly (dev use only)
-        ),
-        make_option(
+        )
+        parser.add_argument(
             '-t', '--no-test-db',
             help="Don't patch connection to use test db",
             action='store_true',
-        ),
-        # (dev use only) if running this command directly, option to use the
-        # default dbs created via syncdb instead of dbs from parent test run
-    )
-
-    help = "We use nosetests path format - path.to.module:function_name"
+        )
+        parser.add_argument(
+            'funcpath',
+            help='path.to.module:function_name'
+        )
 
     def handle(self, *args, **kwargs):
         serializer_name = kwargs['serializer']
@@ -153,12 +184,19 @@ class Command(BaseCommand):
             serialize = b64pickle.dumps
             deserialize = b64pickle.loads
 
+        try:
+            # Django >= 1.10
+            func_path = kwargs['funcpath']
+        except KeyError:
+            func_path = args[0]
+
         # redirect any printing that may occur from stdout->stderr
-        # so as not to pollute our stdout output
-        # (which is deserialized as return value by caller)
+        # so as not to pollute our stdout output (we serialize the
+        # return value of func and print to stdout for capture in
+        # parent process)
         with redirect_stdout(sys.stderr):
             try:
-                if not args:
+                if not func_path:
                     raise CommandError(
                         'Must supply an import path to function to execute')
 
@@ -166,7 +204,7 @@ class Command(BaseCommand):
                     raise CommandError(
                         'Invalid --serializer name')
 
-                module_name, function_name = args[0].split(':')
+                module_name, function_name = func_path.split(':')
                 module = import_module(module_name)
                 f = getattr(module, function_name)
 
@@ -176,7 +214,8 @@ class Command(BaseCommand):
                 # ensure we're using test dbs, shared with parent test run
                 if not kwargs['no_test_db']:
                     use_test_databases()
-
+ 
+                print('WTF')
                 result = f(**f_kwargs)
 
                 close_db_connections()
