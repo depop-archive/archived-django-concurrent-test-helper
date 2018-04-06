@@ -55,6 +55,7 @@ setup(
     install_requires=[
         'six',
         'tblib',
+        'mock',
     ],
     tests_require=[
         'tox>=1.8',
