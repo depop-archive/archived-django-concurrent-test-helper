@@ -6,10 +6,9 @@ import pytest
 from django_concurrent_tests.errors import WrappedError
 from django_concurrent_tests.utils import (
     override_environment,
-    test_call as call_func,
+    run_in_subprocess,
     ProcessManager,
 )
-# if we import as `test_call` pytest thinks it's a test :facepalm:
 
 from .funcs_to_test import simple
 
@@ -41,7 +40,7 @@ def test_deserializer_exception():
     with mock.patch(
         'django_concurrent_tests.b64pickle.loads', side_effect=ValueError('WTF')
     ) as mock_loads:
-        result = call_func(simple)
+        result = run_in_subprocess(simple)
     
     assert isinstance(result, WrappedError)
     assert isinstance(result.error, ValueError)

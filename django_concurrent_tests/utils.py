@@ -68,7 +68,7 @@ class ProcessManager(object):
         return self.stdout
 
 
-def test_call(f, **kwargs):
+def run_in_subprocess(f, **kwargs):
     """
     Args:
         f (Union[function, str]): the function to call, or

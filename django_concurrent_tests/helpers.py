@@ -2,7 +2,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 import six
 
-from .utils import test_call, SUBPROCESS_TIMEOUT
+from .utils import run_in_subprocess, SUBPROCESS_TIMEOUT
 
 
 def call_concurrently(concurrency, function, **kwargs):
@@ -51,7 +51,7 @@ def make_concurrent_calls(*calls):
     futures = []
     for func, kwargs in calls:
         futures.append(
-            pool.apply_async(test_call, args=(func,), kwds=kwargs)
+            pool.apply_async(run_in_subprocess, args=(func,), kwds=kwargs)
         )
     pool.close()
     pool.join()
