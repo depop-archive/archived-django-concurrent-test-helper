@@ -40,11 +40,12 @@ def test_deserializer_exception():
     with mock.patch(
         'django_concurrent_tests.b64pickle.loads', side_effect=ValueError('WTF')
     ) as mock_loads:
-        result = run_in_subprocess(simple)
+        run = run_in_subprocess(simple)
     
-    assert isinstance(result, WrappedError)
-    assert isinstance(result.error, ValueError)
-    assert result.error.args == ('WTF',)
+    assert isinstance(run.manager, ProcessManager)
+    assert isinstance(run.result, WrappedError)
+    assert isinstance(run.result.error, ValueError)
+    assert run.result.error.args == ('WTF',)
 
 
 def test_process_manager_parent_pid():

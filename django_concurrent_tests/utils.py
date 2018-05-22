@@ -4,6 +4,7 @@ import logging
 import subprocess
 import sys
 import threading
+from collections import namedtuple
 from contextlib import contextmanager
 
 import six
@@ -17,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 SUBPROCESS_TIMEOUT = int(os.environ.get('DJANGO_CONCURRENT_TESTS_TIMEOUT', '30'))
+
+
+SubprocessRun = namedtuple('SubprocessRun', ['manager', 'result'])
 
 
 class ProcessManager(object):
@@ -77,7 +81,7 @@ def run_in_subprocess(f, **kwargs):
         **kwargs - kwargs to pass to `function`
 
     Returns:
-        Optional[Any]: either
+        SubprocessRun: where `<SubprocessRun>.result` is either
             <return value> OR <exception raised>
             or None if result was empty
 
@@ -110,6 +114,7 @@ def run_in_subprocess(f, **kwargs):
                 raise errors.TerminatedProcessError(result)
         else:
             logger.debug('Calling {f} in current process'.format(f=function_path))
+            manager = None
             # TODO: collect stdout and maybe log it from here
             result = call_command(
                 'concurrent_call_wrapper',
@@ -118,10 +123,16 @@ def run_in_subprocess(f, **kwargs):
             )
         # deserialize the result from subprocess run
         # (any error raised when running the concurrent func will be stored in `result`)
-        return b64pickle.loads(result) if result else None
+        return SubprocessRun(
+            manager=manager,
+            result=b64pickle.loads(result) if result else None,
+        )
     except Exception as e:
         # handle any errors which occurred during setup of subprocess
-        return errors.WrappedError(e)
+        return SubprocessRun(
+            manager=manager,
+            result=errors.WrappedError(e),
+        )
 
 
 @contextmanager

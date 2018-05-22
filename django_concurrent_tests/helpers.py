@@ -58,6 +58,6 @@ def make_concurrent_calls(*calls):
     # add a bit of extra timeout to allow process terminate cleanup to run
     # (because we also have an inner timeout on our ProcessManager thread join)
     return [
-        future.get(timeout=SUBPROCESS_TIMEOUT + 2)
+        future.get(timeout=SUBPROCESS_TIMEOUT + 2).result
         for future in futures
     ]
