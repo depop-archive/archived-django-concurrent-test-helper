@@ -145,6 +145,12 @@ def redirect_stdout(to):
 
 @contextmanager
 def override_environment(**kwargs):
+    """
+    NOTE:
+    The values in `kwargs` must be strings else you will get a cryptic:
+
+        TypeError: execve() arg 3 contains a non-string value
+    """
     old_env = os.environ
     new_env = os.environ.copy()
     new_env.update(kwargs)
