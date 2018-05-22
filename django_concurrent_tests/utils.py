@@ -1,7 +1,6 @@
 from __future__ import print_function
 import os
 import logging
-import pickle
 import subprocess
 import sys
 import threading
@@ -23,21 +22,34 @@ SUBPROCESS_TIMEOUT = int(os.environ.get('DJANGO_CONCURRENT_TESTS_TIMEOUT', '30')
 class ProcessManager(object):
 
     def __init__(self, cmd):
+        """
+        Kwargs:
+            cmd (Union[str, List[str]]): `args` arg to `Popen` call 
+        """
         self.cmd = cmd
         self.process = None
         self.stdout = None
         self.stderr = None
-        self.terminated = False
+        self.terminated = False  # whether subprocess was terminated by timeout
 
     def run(self, timeout):
+        """
+        Kwargs:
+            timeout (Float): how long to wait for the subprocess to complete task
+
+        Returns:
+            str: stdout output from subprocess
+        """
         def target():
+            env = os.environ.copy()
+            env['DJANGO_CONCURRENT_TESTS_PARENT_PID'] = str(os.getpid())
             self.process = subprocess.Popen(
                 self.cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env=os.environ.copy(),
+                env=env,
             )
-            logger.debug('[{pid}] {cmd}'.format(pid=self.process.pid, cmd=self.cmd[2]))
+            logger.debug('[{pid}] {cmd}'.format(pid=self.process.pid, cmd=' '.join(self.cmd)))
             self.stdout, self.stderr = self.process.communicate()
 
         thread = threading.Thread(target=target)

@@ -4,7 +4,11 @@ import mock
 import pytest
 
 from django_concurrent_tests.errors import WrappedError
-from django_concurrent_tests.utils import override_environment, test_call as call_func
+from django_concurrent_tests.utils import (
+    override_environment,
+    test_call as call_func,
+    ProcessManager,
+)
 # if we import as `test_call` pytest thinks it's a test :facepalm:
 
 from .funcs_to_test import simple
@@ -42,3 +46,19 @@ def test_deserializer_exception():
     assert isinstance(result, WrappedError)
     assert isinstance(result.error, ValueError)
     assert result.error.args == ('WTF',)
+
+
+def test_process_manager_parent_pid():
+    parent_pid = os.getpid()
+
+    cmd = [
+        'python',
+        '-c',
+        'import os; print(os.getenv("DJANGO_CONCURRENT_TESTS_PARENT_PID", "NOT FOUND"))',
+    ]
+    manager = ProcessManager(cmd)
+
+    output = manager.run(30)
+    assert manager.process.pid != parent_pid  # validate assumption
+
+    assert output.decode("utf-8").strip('\n') == str(parent_pid)
