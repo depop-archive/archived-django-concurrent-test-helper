@@ -62,9 +62,12 @@ class ProcessManager(object):
         thread.join(timeout)
         if thread.is_alive():
             # we reached the timeout deadline with process still running
-            logger.debug('[{pid}] reached timeout: terminating...'.format(pid=self.process.pid))
-            self.process.terminate()
-            logger.debug('[{pid}] reached timeout: terminated.'.format(pid=self.process.pid))
+            if self.process:
+                logger.debug('[{pid}] reached timeout: terminating...'.format(pid=self.process.pid))
+                self.process.terminate()
+                logger.debug('[{pid}] reached timeout: terminated.'.format(pid=self.process.pid))
+            else:
+                logger.debug('reached timeout: process did not start.')
             self.terminated = True
             thread.join()
 
