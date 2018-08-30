@@ -7,7 +7,7 @@ pypi:
 	make tag
 
 tag:
-	git tag $$(python -c "from django_concurrent_tests.__about__ import __version__; print __version__")
+	git tag $$(python django_concurrent_tests/__about__.py)
 	git push --tags
 
 test:
