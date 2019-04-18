@@ -1,0 +1,10 @@
+pytest==4.4.1
+pytest-django==3.4.8
+flaky==3.5.3
+pytz
+six
+mock
+tblib
+ipython
+ipdb
+# and pick a version of Django :)
