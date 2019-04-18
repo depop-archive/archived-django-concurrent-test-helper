@@ -28,14 +28,14 @@ class WrappedError(Exception):
     Or drop into a debugger:
 
         wrapped.debug()
-        ipdb> 
+        ipdb>
         ... can explore the stack of original exception!
     """
 
     def __init__(self, error):
         self.error = error
         __,  __, self.traceback = sys.exc_info()
-        super(WrappedError, self).__init__(str(error))
+        super(WrappedError, self).__init__(repr(error))
 
     def reraise(self):
         six.reraise(self.error, None, self.traceback)
