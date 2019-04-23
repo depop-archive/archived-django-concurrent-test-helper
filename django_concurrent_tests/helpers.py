@@ -1,7 +1,5 @@
 from multiprocessing.pool import ThreadPool as Pool
 
-import six
-
 from .utils import run_in_subprocess, SUBPROCESS_TIMEOUT
 
 
