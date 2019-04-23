@@ -1,5 +1,5 @@
-pytest==4.4.1
-pytest-django==3.4.8
+pytest==3.10.1
+pytest-django==2.9
 flaky==3.5.3
 pytz
 six

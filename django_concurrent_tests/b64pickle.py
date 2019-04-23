@@ -33,14 +33,22 @@ def loads(val):
     try:
         return pickle.loads(val)
     except Exception as e:
+        str_val = val.decode('ascii')
         # we can still recover some useful information from the still-pickled
         # value... take the first part of the content, this should show
         # the wrapped error in raw form, before the long traceback section
-        summary = '{}...'.format(val[:val.index('unpickle_traceback') + 18])
+        if 'unpickle_traceback' in str_val:
+            truncate_to = str_val.index('unpickle_traceback') + len('unpickle_traceback')
+        else:
+            truncate_to = 300
+        summary = '{truncated}{ellipsis}'.format(
+            truncated=str_val[:truncate_to],
+            ellipsis='...' if len(str_val) > truncate_to else ''
+        )
         # `summary` will be printed when you `repr(error)` hopefully giving
-        # some hints what was wrong immediately
+        # some hints about what was wrong
         error = PickleLoadsError(e, summary)
         # attach the full still-pickled value to allow detailed introspection
         # in case of failure
-        error.pickled_value = val
+        error.pickled_value = str_val
         raise error

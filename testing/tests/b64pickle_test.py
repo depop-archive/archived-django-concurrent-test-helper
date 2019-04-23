@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 from __future__ import unicode_literals, print_function
+from base64 import b64encode
 from datetime import date, datetime
 from decimal import Decimal
 try:
@@ -7,6 +8,7 @@ try:
 except ImportError:
     from io import StringIO
 
+import mock
 import pytest
 import pytz
 
@@ -89,3 +91,35 @@ def test_string_stdout_roundtrip():
     print(option)
     print(val)
     assert b64pickle.loads(val) == obj
+
+
+def test_error_unpickling():
+    unpickle_error = RuntimeError("Could not unpickle")
+    b64pickled_value = b64encode("pickled value".encode('ascii'))
+
+    with mock.patch(
+        'pickle.loads',
+        side_effect=unpickle_error,
+    ):
+        with pytest.raises(b64pickle.PickleLoadsError) as exc_info:
+            b64pickle.loads(b64pickled_value)
+
+    assert exc_info.value.args[0] == unpickle_error
+    assert exc_info.value.args[1] == "pickled value"
+
+
+def test_error_unpickling_truncation():
+    unpickle_error = RuntimeError("Could not unpickle")
+    b64pickled_value = b64encode(
+        "pickled value,unpickle_traceback:blahblahblah".encode('ascii')
+    )
+
+    with mock.patch(
+        'pickle.loads',
+        side_effect=unpickle_error,
+    ):
+        with pytest.raises(b64pickle.PickleLoadsError) as exc_info:
+            b64pickle.loads(b64pickled_value)
+
+    assert exc_info.value.args[0] == unpickle_error
+    assert exc_info.value.args[1] == "pickled value,unpickle_traceback..."
