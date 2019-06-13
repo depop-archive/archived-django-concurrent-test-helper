@@ -206,7 +206,15 @@ class Command(BaseCommand):
 
                 module_name, function_name = func_path.split(':')
                 module = import_module(module_name)
-                f = getattr(module, function_name)
+                try:
+                    f = getattr(module, function_name)
+                except AttributeError:
+                    print(
+                        "Could not import '{module}.{func}', you may need to use "
+                        "https://github.com/depop/django-concurrent-test-helper/#string-import-paths"
+                        .format(module=module_name, func=function_name)
+                    )
+                    raise
 
                 f_kwargs = deserialize(kwargs['kwargs'] or '{}')
 

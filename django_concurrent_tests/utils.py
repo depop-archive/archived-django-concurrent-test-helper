@@ -71,7 +71,7 @@ class ProcessManager(object):
             self.terminated = True
             thread.join()
 
-        logger.debug(self.stderr)
+        logger.error(self.stderr)
         return self.stdout
 
 

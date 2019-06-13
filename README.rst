@@ -164,10 +164,11 @@ On the other hand, customised environment vars *will* be inherited by the subpro
             results = call_concurrently(1, func_to_test)
         assert results[0] == 'so special'
 
+.. _string-import-paths:
 
 Lastly, you can pass a string import path to a function rather than the function itself. The format is: ``'dotted module.path.to:function'`` (NOTE colon separates the name to import, after the dotted module path).
 
-This can be nice when you don't want to import the function itself in your test to pass it. But more importantly it is *essential* in some cases, such as when ``f`` is a decorated function whose decorator returns a new object (and ``functools.wraps`` was not used). In that situation we will not be able to introspect the import path from the function object's ``__module__`` (which will point to the decorator's module instead), so for those cases calling by string is *mandatory*.
+This can be nice when you don't want to import the function itself in your test to pass it. But more importantly it is *essential* in some cases, such as when ``f`` is a decorated function whose decorator returns a new object (and ``functools.wraps`` was not used). In that situation we will not be able to introspect the import path from the function object's ``__module__`` (which will point to the decorator's module instead), so for those cases calling by string is *mandatory*. (Celery tasks decorated with ``@app.task`` are an example which need to be called by string path)
 
 .. code:: python
 
