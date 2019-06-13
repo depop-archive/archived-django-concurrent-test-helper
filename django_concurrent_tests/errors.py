@@ -34,7 +34,7 @@ class WrappedError(Exception):
 
     def __init__(self, error):
         self.error = error
-        __,  __, self.traceback = sys.exc_info()
+        _,  _, self.traceback = sys.exc_info()
         super(WrappedError, self).__init__(repr(error))
 
     def reraise(self):

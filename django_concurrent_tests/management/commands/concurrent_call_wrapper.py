@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import json
 import sys
+import traceback
 import warnings
 from functools import partial
 from importlib import import_module
@@ -227,6 +228,9 @@ class Command(BaseCommand):
 
                 close_db_connections()
             except Exception as e:
+                _,  _, tb_ = sys.exc_info()
+                traceback.print_tb(tb_)
+                print(repr(e))
                 result = errors.WrappedError(e)
 
         print(serialize(result), end='')
