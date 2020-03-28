@@ -108,7 +108,7 @@ def run_in_subprocess(f, **kwargs):
 
         if not os.environ.get('CONCURRENT_TESTS_NO_SUBPROCESS'):
             cmd = [
-                getattr(settings, 'MANAGE_PY_PATH', 'manage.py'),
+                getattr(settings, 'MANAGE_PY_PATH', './manage.py'),
                 'concurrent_call_wrapper',
                 function_path,
                 '--kwargs=%s' % serialized_kwargs,

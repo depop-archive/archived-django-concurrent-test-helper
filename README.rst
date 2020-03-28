@@ -42,7 +42,9 @@ Getting started
 
 Goes well with https://github.com/box/flaky (``pip install flaky``), as you may want to run a test several times while trying to trigger a rare race condition.
 
-You need to add it to your Django project settings too:
+You may need to set a config value in your Django ``settings.py``. By default we use ``MANAGE_PY_PATH = "./manage.py"``, this should work for most cases. If you need another path set ``MANAGE_PY_PATH`` in your Django settings.
+
+You need to add this library to your Django project settings too:
 
 .. code:: python
 
