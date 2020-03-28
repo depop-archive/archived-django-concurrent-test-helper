@@ -54,7 +54,7 @@ You need to add this library to your Django project settings too:
     )
 
 
-Two helpers are provided:
+Two helpers are provided, ``call_concurrently``:
 
 .. code:: python
 
@@ -69,7 +69,7 @@ Two helpers are provided:
         successes = list(filter(is_success, results))
         assert len(successes) == 1
 
-and:
+and ``make_concurrent_calls``:
 
 .. code:: python
 
@@ -87,6 +87,28 @@ and:
         # results contains the return value from each call
         successes = list(filter(is_success, results))
         assert len(successes) == 1
+
+If you are using Django's ``TestCase`` class you need to separate your concurrent tests and use Django's ``TransactionTestCase`` as the base class instead (see `DB Transactions`_), i.e.:
+
+.. code:: python
+
+    from django.test import TransactionTestCase
+    from django_concurrent_tests.helpers import make_concurrent_calls
+
+    def is_success(result):
+        return result is True and not isinstance(result, Exception)
+
+    class MyConcurrentTests(TransactionTestCase):
+        def test_concurrent_code(self):
+            calls = [
+                (first_func, {'first_arg': 1}),
+                (second_func, {'other_arg': 'wtf'}),
+            ] * 3
+            results = make_concurrent_calls(*calls)
+            # results contains the return value from each call
+            successes = list(filter(is_success, results))
+            assert len(successes) == 1
+
 
 Note that if your called function raises an exception, the exception will be wrapped in a ``WrappedError`` exception. This provides a way to access the original traceback, or even re-raise the original exception.
 
@@ -199,9 +221,7 @@ We originally wanted to implement this purely using ``multiprocessing.Pool`` to 
 
 Unfortunately we hit a problem with this approach: multiprocessing works by forking the parent process. The forked processes inherit the parent's sockets, so in a Django project this will include things like the socket opened by psycopg2 to your Postgres database. However the inherited sockets are in a broken state. There's a bunch of questions about this on SO and no solutions presented, it seems basically you can't fork a Django process and do anything with the db afterwards.
 
-(Note in Python 3 you may be able to use the `'spawn' start method`_ of multiprocessing to avoid the fork problems - have not tried this)
-
-.. _'spawn' start method: https://docs.python.org/3/library/multiprocessing.html#contexts-and-start-methods
+(Note in 1.8+ versions of Django the multiprocessing approach is possible, we hope to release an updated version of this library based on that at some point...)
 
 So in order to make this work we have to use ``subprocess.Popen`` to run with un-forked 'virgin' processes. To be able to test an arbitrary function in this way we do an ugly/clever hack and provide a ``manage.py concurrent_call_wrapper`` command (which is why you have to add this module to your ``INSTALLED_APPS``) which handles the serialization of kwargs and return values.
 
@@ -211,6 +231,9 @@ Another potential gotcha is if you are using SQLite db when running your tests. 
 
     For these tests to work you need to be sure to set ``TEST_NAME`` for the SQLite db to a *real filename* in your ``DATABASES`` settings (in Django 1.9 this is a dict, i.e. ``{'TEST': {'NAME': 'test.db'}}``).
 
-Finally you need to be careful with Django's implicit transactions, otherwise data you create in the parent test has not yet been committed and is therefore not visible to the subprocesses.
+DB Transactions
+~~~~~~~~~~~~~~~
+
+Finally you need to be careful with Django's implicit db transactions, otherwise data you create in the parent test case has not yet been committed and is therefore not visible to the subprocesses.
 
     Ensure that you use Django's ``TransactionTestCase`` or a derivative (to prevent all the code in your test from being inside an uncommitted transaction).
